@@ -3,6 +3,7 @@ from qtpy import QtWidgets
 
 from pymodaq_gui.utils.custom_app import CustomApp
 from pymodaq_gui.utils.dock import Dock, DockArea
+from pymodaq_gui.utils.widgets import SpinBox
 from pymodaq_gui.parameter import Parameter
 from pymodaq_gui.managers.parameter_manager import ParameterManager
 from pymodaq_gui.plotting.data_viewers.viewer1D import Viewer1D, DataToExport, DataWithAxes
@@ -101,7 +102,7 @@ class KeithleySourcemeter1DApp(CustomApp):
         self.move_controls.setVisible(True)
         move_controls_dock = self.docks["move_settings"] = Dock("Source settings")
         move_controls_dock.addWidget(self.move_controls)
-        move_controls_dock.setStretch(y=0.05)
+        move_controls_dock.setStretch(x=2, y=1)
         self.dockarea.addDock(move_controls_dock, "left")
 
         # Controls for DAQ Viewer
@@ -109,28 +110,44 @@ class KeithleySourcemeter1DApp(CustomApp):
         self.daq_controls.setVisible(True)
         daq_controls_dock = self.docks["acquisition_settings"] = Dock("DAQ settings")
         daq_controls_dock.addWidget(self.daq_controls)
-        daq_controls_dock.setStretch(y=0.05)
+        daq_controls_dock.setStretch(x=2, y=2)
         self.dockarea.addDock(daq_controls_dock, "bottom", move_controls_dock)
 
         # Device (and sweep) settings
         params_dock = self.docks["parameters"] = Dock("Device settings")
         params_dock.addWidget(self.daq.settings_tree)
+        params_dock.setStretch(x=2, y=10)
         self.dockarea.addDock(params_dock, "bottom", daq_controls_dock)
 
         # Save settings
         save_dock = self.docks["save"] = Dock("Save settings")
         save_dock.addWidget(self.settings_tree)
+        save_dock.setStretch(x=2, y=4)
         self.dockarea.addDock(save_dock, "bottom", params_dock)
 
         # Visible 1D Viewer
         self.viewer = Viewer1D(QtWidgets.QWidget())
         viewer_dock = self.docks["viewer"] = Dock("I-V characteristic")
         viewer_dock.addWidget(self.viewer.parent)
+        viewer_dock.setStretch(x=10)
         self.dockarea.addDock(viewer_dock, "right")
 
 
     def setup_actions(self):
+
+        # Snap button
         self.add_action("snap", "Snap Data", "snap", "Click to get one data shot")
+
+        # Waiting time spinbox
+        wait_time_param = self.daq.settings.child("main_settings").child("wait_time")
+        wait_time_widget = SpinBox()
+        wait_time_widget.setValue(wait_time_param.value())
+        wait_time_widget.valueChanged.connect(lambda new_val: wait_time_param.setValue(new_val))
+        wait_time_widget.setMaximumWidth(100)
+        self.add_widget("wait_label", QtWidgets.QLabel("Wait time [ms]:"))
+        self.add_widget("wait_time", wait_time_widget, tip="Waiting time between subsequent measurements")
+
+        # Grab button
         self.add_action("grab", "Grab Data", "run_all", "Click to continuously get data", checkable=True)
 
 
