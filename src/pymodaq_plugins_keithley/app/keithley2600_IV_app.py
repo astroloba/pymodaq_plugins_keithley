@@ -114,17 +114,33 @@ class KeithleySourcemeterApp(CustomApp):
         sample = self.settings["sample_name"]
         path = self.settings["save_path"]
 
-        # Save data in tab-separated text format
+        # Save data in tab-separated text format (except when initializing)
         if not self.first_run:
-            now = datetime.datetime.now()
-            now_file = now.strftime("%Y-%m-%d_%H-%M-%S")
-            now_iso = now.isoformat()
-            save_file = pathlib.Path(path) / f"IVcurve_{now_file}_{sample}.txt"
+
+            # Retrieve measurement start and end timestamps from detector settings
+            meas_start = self.daq.settings.child("detector_settings", "meas_start").value().toPython()
+            meas_end = self.daq.settings.child("detector_settings", "meas_end").value().toPython()
+
+            # Set header: measurement start/end, sample name, column names
+            header = ""
+            header += f"Start\t{meas_start.isoformat()}\n"
+            header += f"End\t{meas_end.isoformat()}\n"
+            header += f"Sample\t{sample}\n"
+            header += f"Voltage [V]\tCurrent [A]"
+
+            # Set filename
+            dt_file = meas_end.strftime("%Y-%m-%d_%H-%M-%S")
+            save_file = pathlib.Path(path) / f"IVcurve_{dt_file}_{sample}.txt"
+
+            # Set data
             x = self.data.axes[0].get_data()
             y = self.data[0]
             export_data = np.column_stack((x, y))
-            header = f"{now_iso}\t{sample}\nVoltage [V]\tCurrent [A]"
+
+            # Write file
             np.savetxt(save_file, export_data, fmt="%.6e", header=header, comments="#")
+
+        # Reset first run flag
         self.first_run = False
 
         # Update viewer
