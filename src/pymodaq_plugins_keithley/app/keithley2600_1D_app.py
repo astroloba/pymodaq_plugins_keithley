@@ -64,6 +64,19 @@ class KeithleySourcemeter1DApp(CustomApp):
         daq_settings["controller_ID"] = controller_ID
         daq_settings["channel"] = "A"
 
+        # Initialize DAQ Viewer (master)
+        self.daq.init_hardware_ui(True)
+        QtWidgets.QApplication.processEvents()
+
+        # Dirty patch to retrieve controller and apply it to DAQ move
+        while not self.daq.controller:
+            QtWidgets.QApplication.processEvents()
+        self.move.controller = self.daq.controller 
+
+        # Initialize DAQ Move (slave)
+        self.move.init_hardware_ui(True)
+        QtWidgets.QApplication.processEvents()
+
 
     def setup_docks(self):
 
