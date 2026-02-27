@@ -171,15 +171,24 @@ class KeithleySourcemeter1DApp(CustomApp):
         # Save data in tab-separated text format (except when initializing)
         if not self.first_run:
 
-            # Retrieve measurement start and end timestamps from detector settings
-            meas_start = self.daq.settings.child("detector_settings", "meas_start").value().toPython()
-            meas_end = self.daq.settings.child("detector_settings", "meas_end").value().toPython()
+            # Retrieve detector settings
+            daq_settings = self.daq.settings.child("detector_settings") 
 
-            # Set header: measurement start/end, sample name, column names
+            # Retrieve measurement start and end timestamps from detector settings
+            meas_start = daq_settings["meas_start"].toPython()
+            meas_end = daq_settings["meas_end"].toPython()
+
+            # Retrieve idle polarization voltage from detector settings
+            idle_pol_on = daq_settings["idle_pol_on"]
+            idle_pol_v = daq_settings["idle_pol_v"] if idle_pol_on else 0
+
+            # Set header: measurement start/end, sample name, column names, polarization voltage
             header = ""
             header += f"Start\t{meas_start.isoformat()}\n"
             header += f"End\t{meas_end.isoformat()}\n"
             header += f"Sample\t{sample}\n"
+            header += f"Polarization voltage after scan [V]\t{idle_pol_v}\n"
+            header += f"\n"
             header += f"Voltage [V]\tCurrent [A]"
 
             # Set filename
