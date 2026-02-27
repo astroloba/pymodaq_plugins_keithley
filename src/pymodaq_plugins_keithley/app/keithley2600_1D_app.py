@@ -7,6 +7,7 @@ from pymodaq_gui.parameter import Parameter
 from pymodaq_gui.managers.parameter_manager import ParameterManager
 from pymodaq_gui.plotting.data_viewers.viewer1D import Viewer1D, DataToExport, DataWithAxes
 from pymodaq.control_modules.daq_viewer import DAQ_Viewer, DAQ_Viewer_UI, DAQTypesEnum
+from pymodaq.control_modules.daq_move import DAQ_Move
 from pymodaq_utils.config import Config
 
 import datetime
@@ -31,8 +32,7 @@ def _build_param(name, title, type, value, limits=None, unit=None, **kwargs):
     return params
 
 
-class KeithleySourcemeterApp(CustomApp):
-
+class KeithleySourcemeter1DApp(CustomApp):
 
     # Global parameters
     params = [_build_param("save_path", "Save location", "browsepath", 
@@ -53,32 +53,56 @@ class KeithleySourcemeterApp(CustomApp):
         # Create UI
         self.setup_ui()
 
+        # Set initial device properties
+        controller_ID = 1
+        move_settings = self.move.settings.child("move_settings")
+        move_settings.child("multiaxes")["multi_status"] = "Slave"
+        move_settings.child("multiaxes")["controller_ID"] = controller_ID
+        move_settings["channel"] = "B"
+        daq_settings = self.daq.settings.child("detector_settings")
+        daq_settings["controller_status"] = "Master"
+        daq_settings["controller_ID"] = controller_ID
+        daq_settings["channel"] = "A"
+
 
     def setup_docks(self):
 
-        # Hidden DAQ Viewer
+        # Hidden area with DAQ move and DAQ viewer
         daq_dockarea = DockArea()
         daq_window = QtWidgets.QMainWindow()
         daq_window.setCentralWidget(daq_dockarea)
+
+        # Hidden DAQ viewer
         self.daq = DAQ_Viewer(daq_dockarea, "DAQ window")
         self.daq.daq_type = DAQTypesEnum.DAQ1D
         QtWidgets.QApplication.processEvents()
         self.daq.detector = "Keithley2600"
-        self.daq.init_hardware_ui(True)
-        QtWidgets.QApplication.processEvents()
 
-        # Settings for DAQ Viewer
-        self.daq_settings = self.daq.ui._detector_widget
-        self.daq_settings.setVisible(True)
-        daq_settings_dock = self.docks["acquisition_settings"] = Dock("DAQ settings")
-        daq_settings_dock.addWidget(self.daq_settings)
-        daq_settings_dock.setStretch(y=0.05)
-        self.dockarea.addDock(daq_settings_dock, "left")
+        # Hidden DAQ move
+        self.move = DAQ_Move(self, "DAQ move")
+        QtWidgets.QApplication.processEvents()
+        self.move.actuator = "Keithley2600"
+
+        # Controls for DAQ Move
+        self.move_controls = self.move.ui.move_toolbar
+        self.move_controls.setVisible(True)
+        move_controls_dock = self.docks["move_settings"] = Dock("Source settings")
+        move_controls_dock.addWidget(self.move_controls)
+        move_controls_dock.setStretch(y=0.05)
+        self.dockarea.addDock(move_controls_dock, "left")
+
+        # Controls for DAQ Viewer
+        self.daq_controls = self.daq.ui._detector_widget
+        self.daq_controls.setVisible(True)
+        daq_controls_dock = self.docks["acquisition_settings"] = Dock("DAQ settings")
+        daq_controls_dock.addWidget(self.daq_controls)
+        daq_controls_dock.setStretch(y=0.05)
+        self.dockarea.addDock(daq_controls_dock, "bottom", move_controls_dock)
 
         # Device (and sweep) settings
         params_dock = self.docks["parameters"] = Dock("Device settings")
         params_dock.addWidget(self.daq.settings_tree)
-        self.dockarea.addDock(params_dock, "bottom", daq_settings_dock)
+        self.dockarea.addDock(params_dock, "bottom", daq_controls_dock)
 
         # Save settings
         save_dock = self.docks["save"] = Dock("Save settings")
@@ -175,7 +199,7 @@ def main():
     area = DockArea()
     win = QtWidgets.QMainWindow()
     win.setCentralWidget(area)
-    myapp = KeithleySourcemeterApp(area)
+    myapp = KeithleySourcemeter1DApp(area)
     win.show()
     app.exec()
 
