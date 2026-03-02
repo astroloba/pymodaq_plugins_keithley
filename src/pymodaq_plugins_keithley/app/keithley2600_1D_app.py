@@ -222,7 +222,6 @@ class KeithleySourcemeter1DApp(CustomApp):
         name = param.name()
         val = param.value()
         unit = param.opts.get("suffix")
-        qty = Q_(val, unit)
 
         # No parameters
         pass
