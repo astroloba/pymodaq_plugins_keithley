@@ -59,7 +59,7 @@ class KeithleySourcemeter1DApp(CustomApp):
         move_settings = self.move.settings.child("move_settings")
         move_settings.child("multiaxes")["multi_status"] = "Slave"
         move_settings.child("multiaxes")["controller_ID"] = controller_ID
-        move_settings["channel"] = "B"
+        move_settings["channel"] = "A"
         daq_settings = self.daq.settings.child("detector_settings")
         daq_settings["controller_status"] = "Master"
         daq_settings["controller_ID"] = controller_ID
