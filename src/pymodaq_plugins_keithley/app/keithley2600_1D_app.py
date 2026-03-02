@@ -166,10 +166,15 @@ class KeithleySourcemeter1DApp(CustomApp):
 
         # Retrieve parameters
         sample = self.settings["sample_name"]
-        path = self.settings["save_path"]
+        save_path = self.settings["save_path"]
+        path = pathlib.Path(save_path)
 
         # Save data in tab-separated text format (except when initializing)
         if not self.first_run:
+
+            # Create save folder if necessary
+            if not path.exists():
+                path.mkdir(parents=True)
 
             # Retrieve detector settings
             daq_settings = self.daq.settings.child("detector_settings") 
@@ -193,7 +198,7 @@ class KeithleySourcemeter1DApp(CustomApp):
 
             # Set filename
             dt_file = meas_end.strftime("%Y-%m-%d_%H-%M-%S")
-            save_file = pathlib.Path(path) / f"IVcurve_{dt_file}_{sample}.txt"
+            save_file = path / f"IVcurve_{dt_file}_{sample}.txt"
 
             # Set data
             x = self.data.axes[0].get_data()
